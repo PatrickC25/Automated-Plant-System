@@ -1,0 +1,210 @@
+/* The Librarys */
+
+// include the library code:
+#include <LiquidCrystal.h>
+#include <dht.h>
+
+
+
+/* ints and Pins */
+
+// Timer
+int days = 0;
+
+// Stages of Growth
+int stage = 0;
+
+// DHT
+#define dht_apin A0
+dht DHT;
+
+// LDR
+#define ldrPin A1
+int sensorPin = A1; // select the input pin for LDR
+int sensorValue = 0; // variable to store the value coming from the sensor
+
+// Water Level
+int waterLevel = 0;  // holds the value
+int wlPin = A2; // sensor pin used
+
+// LCD
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2; // initialize the library by associating any needed LCD interface pin
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7); // with the arduino pin number it is connected to
+
+// Water Pump ~ initialising the water pump pins
+int waterpumpPin = 9; // choose free PWM pin
+int LASTwater = 0;
+
+// Fan ~ initialising the fan motor pins
+int fanPin = 6; // choose free PWM pin
+
+// Button
+const int BUTTON = 7; // pin select for button
+int BUTTONstate = 0; // start variable
+
+
+
+/* Setup for each of the different areas */
+
+void setup() {
+
+  lcd.begin(16, 2); // set up the LCD's number of columns and rows
+
+  pinMode(ldrPin, INPUT); // ldrpin
+
+  pinMode(waterpumpPin, OUTPUT); // WaterPump output initialisng
+
+  pinMode(fanPin, OUTPUT); // Fan output initialisng
+
+  pinMode(BUTTON, INPUT); // Button as an input singal
+
+  Serial.begin(9600); // start a serial 
+  
+ }
+
+
+
+/* Loops include the actions being completed in a Loop */
+
+void loop() {
+
+
+// Plant stages of Growth
+
+lcd.setCursor(0, 0);
+  stage = ((millis() / 1000)/(60*60*24));
+
+  if (stage<=5){ lcd.print("Root"); } 
+  else if (stage>5 && stage<=60){ lcd.print("Veg"); } 
+  else if (stage>60 && stage<=130){ lcd.print("Flwr"); } 
+  else if (stage>130){ lcd.print("Harv"); }
+      delay(500);
+  
+// Time Counters
+
+// number of weeks since start
+lcd.setCursor(4, 0); // (x,y), setting the position
+  lcd.print("W"); // printing the label for weeks "w"
+lcd.setCursor(5, 0); 
+  lcd.print((millis() / 1000)/(60*60*24*7)); // print the number of weeks since reset
+      delay(500);
+      
+// number of days in this week  
+lcd.setCursor(7, 0);
+  lcd.print("D"); // printing the label for days "D"
+lcd.setCursor(8, 0);
+ days = ((millis() / 1000)/(60*60*24));
+for (int days = 0; days < 8; days += 1) { lcd.print(days); } // print the day of the week (number) and reset after 7 days (0-7 days)
+      delay(500);
+
+// Fan 
+
+analogWrite(fanPin, HIGH); // fan is on
+     delay(30000); //30 seconds
+analogWrite(fanPin, LOW); // fan is off
+     delay(3600000); // 1 hour
+
+// the fan must be operate a few times a day for a minute, delays required here ~~~ not tested
+
+}
+
+
+
+/* Sensors continuosly Reading and Printing */
+
+void sensors(){
+
+// Temperature and Humidity 
+
+    int chk = DHT.read11(dht_apin);  // Serial monitor
+    Serial.print(DHT.humidity);
+    Serial.print(DHT.temperature); 
+
+lcd.setCursor(12, 0);
+  lcd.print("T"); // printing the label for Temp "T"
+lcd.setCursor(13,0); 
+    lcd.print(DHT.temperature); // printing the temp vlaue
+lcd.setCursor(15,0);  
+       lcd.print("C");
+      delay(500);
+      
+lcd.setCursor(12, 1);
+  lcd.print("H"); // printing the label for Humidity "H"
+lcd.setCursor(13,1);
+    lcd.print(DHT.humidity); // printing the humidity value
+lcd.setCursor(15,1);
+       lcd.print("%");
+      delay(500);
+
+// LDR
+/*
+    sensorValue = analogRead(sensorPin); // read the value from the sensor
+    Serial.println(sensorValue);
+
+lcd.setCursor(0, 1);
+  lcd.print("LI"); // printing the label for Light Intensity "LI"
+lcd.setCursor(2,1);
+  lcd.print((sensorValue/255)*100); // (sensorvalue/maximum)*100 = LI precentage (maximum = 1023)
+lcd.setCursor(5,1);
+      lcd.print("%");
+      delay(500);
+// Code not fully tested
+*/
+
+// Water Level
+
+lcd.setCursor(6, 1);
+  lcd.print("WL"); // printing the label for Water level "WL"
+
+lcd.setCursor(8, 1);  // readings from the analog the pin and labels
+    waterLevel = analogRead(wlPin); //Read data from analog pin and store it to resval variable
+   
+  if (waterLevel<=110){ 
+    lcd.print("Fill"); 
+    } 
+  else if (waterLevel>110 && waterLevel<=220){
+    lcd.print("Low"); 
+    } 
+  else if (waterLevel>220 && waterLevel<=330){
+    lcd.print("Mid"); 
+    } 
+  else if (waterLevel>330){ 
+    lcd.print("High"); 
+    }
+      delay(500);
+// needs character corrections: println ~> print, 
+
+}
+
+
+/* Buttons and Actuations */
+
+void operate(){
+
+// water pump
+
+lcd.setCursor(9, 0);
+  lcd.print("LW"); // printing the label for Water Pump since last watering "LW"
+lcd.setCursor(11, 0);
+LASTwater = ((millis() / 1000)/(60*60*24));
+  lcd.print(LASTwater); // print the day of the week (number)
+BUTTONstate = digitalRead(BUTTON);
+  for (LASTwater = 0; LASTwater == BUTTONstate; LASTwater +=1) { 
+    digitalRead(BUTTON); 
+    }
+  
+  
+BUTTONstate = digitalRead(BUTTON);
+  if (BUTTONstate == HIGH) { 
+    analogWrite(waterpumpPin, HIGH); 
+    } // when the button has been pushed then pour water
+  else {
+    analogWrite(waterpumpPin, LOW); 
+    } // when the button is not pushed no water pumps
+      delay(500);
+// this has not been tested, possibly try number (o-255) instead of HIGH/LOW
+
+
+}
+
+//End
