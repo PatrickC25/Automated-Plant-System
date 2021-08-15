@@ -137,7 +137,7 @@ lcd.setCursor(15,1);
       delay(500);
 
 // LDR
-/*
+
     sensorValue = analogRead(sensorPin); // read the value from the sensor
     Serial.println(sensorValue);
 
@@ -148,8 +148,6 @@ lcd.setCursor(2,1);
 lcd.setCursor(5,1);
       lcd.print("%");
       delay(500);
-// Code not fully tested
-*/
 
 // Water Level
 
