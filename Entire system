@@ -1,0 +1,169 @@
+
+
+// include the library code:
+#include <LiquidCrystal.h>
+#include <dht.h>
+
+
+
+// Pins:
+
+//~> DHT
+
+#define dht_apin A0
+
+dht DHT;
+
+//~> LDR
+
+#define ldrPin A1
+// select the input pin for LDR
+int sensorPin = A1; 
+// variable to store the value coming from the sensor
+int sensorValue = 0; 
+
+//~> LCD
+
+// initialize the library by associating any needed LCD interface pin
+// with the arduino pin number it is connected to
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+//~> Water Level
+
+// initialising the pin used
+int resval = 0;  // holds the value
+int respin = A5; // sensor pin used
+
+
+//~> Water Pump
+
+// initialising the water pump pins
+//const int motorPin = 9; // choose free pin;
+
+
+//~> Setup 
+
+void setup() {
+
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+
+  // ldrpin
+  pinMode(ldrPin, INPUT);
+
+  // Pump output initialisng
+  //pinMode(motorPin, OUTPUT);
+
+  // start a serial 
+  Serial.begin(9600);
+  
+ }
+
+
+
+
+//~> Loops
+
+void loop() {
+
+
+//~> Counters
+
+  // set the cursor to column 0, line 1
+  // (note: line 1 is the second row, since counting begins with 0):
+lcd.setCursor(1, 0);
+  // print the number of seconds since reset:
+  lcd.print((millis() / 1000)/(60*60*24*7));
+
+lcd.setCursor(4, 0);
+  // print the day of the week (number)
+  lcd.print((millis() / 1000)/(60*60*24));
+
+
+//~> Labels
+
+  // printing the label for weeks "w"
+lcd.setCursor(0, 0);
+  lcd.print("W");
+
+  // printing the label for days "D"
+lcd.setCursor(3, 0);
+  lcd.print("D");
+
+  // printing the label for Humidity "H"
+lcd.setCursor(12, 1);
+  lcd.print("H");
+
+  // printing the label for Temp "T"
+lcd.setCursor(12, 0);
+  lcd.print("T");
+
+  // printing the label for Light Intensity "LI"
+lcd.setCursor(0, 1);
+  lcd.print("LI");
+
+  // printing the label for Water Pump "WP"
+lcd.setCursor(6, 1);
+  lcd.print("WP");
+
+//~> Temperature and Humidity
+
+  // Serial monitor
+   int chk = DHT.read11(dht_apin);
+    
+    Serial.print(DHT.humidity);
+    
+    Serial.print(DHT.temperature); 
+
+  // LCD
+lcd.setCursor(13,0); 
+    lcd.print(DHT.temperature);
+lcd.setCursor(15,0);  
+    lcd.print("C");
+  
+lcd.setCursor(13,1);
+    lcd.print(DHT.humidity);
+lcd.setCursor(15,1);
+    lcd.print("%");
+
+//~> LDR
+
+  // read the value from the sensor
+  sensorValue = analogRead(sensorPin); 
+  Serial.println(sensorValue);
+
+lcd.setCursor(2,1);
+  // (sensorvalue/maximum)*100 = LI precentage (maximum = 1023)
+  lcd.print(sensorValue); 
+
+lcd.setCursor(5,1);
+    lcd.print("%");
+
+//~> Water Level
+
+  // printing the label for Water level "WL"
+  lcd.setCursor(6, 0);
+  lcd.print("WL");
+
+  // readings from the analog the pin and labels
+  lcd.setCursor(8, 0);
+  resval = analogRead(respin); //Read data from analog pin and store it to resval variable
+   
+  if (resval<=100){ lcd.println("Fill"); } 
+  else if (resval>100 && resval<=250){ lcd.println("Low"); } 
+  else if (resval>250 && resval<=330){ lcd.println("Mid"); } 
+  else if (resval>330){ lcd.println("High"); }
+
+//~> water pump
+
+// water pump is actuatuating but the water is not pumping, possibly re design it or used the motor for a fan system.
+   // analogWrite(motorPin, 0);
+     
+//~> Delay
+    
+  delay(500);
+ 
+}
+
+//End
